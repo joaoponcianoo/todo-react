@@ -5,25 +5,44 @@ import { v4 } from "uuid";
 import { useEffect } from "react";
 import Title from "./components/Title";
 
+import { createClient } from "@supabase/supabase-js";
+
 function App() {
-  const [tasks, setTasks] = useState([
-    JSON.parse(localStorage.getItem("tasks")) || [],
-  ]);
+  const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+    // Update the database
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const updateTasks = async () => {
+      const { data, error } = await supabase.from("todos").upsert(tasks);
+      if (error) {
+        console.error("Error updating tasks", error.message);
+        return;
+      }
+      console.log("Tasks updated", data);
+    };
+    updateTasks();
   }, [tasks]);
 
+  // initialize supabase
   useEffect(() => {
-    const fetchTasks = async () => {
-      const response = await fetch(
-        "https://jsonplaceholder.typicode.com/todos?_limit=10",
-        { method: "GET" }
-      );
-      const data = await response.json();
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const fetchTodos = async () => {
+      const { data, error } = await supabase.from("todos").select("*");
+      if (error) {
+        console.error("Error fetching todos", error.message);
+        return;
+      }
       setTasks(data);
     };
-    // fetchTasks();
+
+    fetchTodos();
   }, []);
 
   function onTaskClick(taskId) {
@@ -32,7 +51,7 @@ function App() {
       if (task.id === taskId) {
         return {
           ...task,
-          isCompleted: !task.isCompleted,
+          iscomplete: !task.iscomplete,
         };
       }
       return task;
@@ -41,16 +60,34 @@ function App() {
   }
 
   function onDeleteTaskClick(taskId) {
+    // Delete the database
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const deleteTask = async () => {
+      const { data, error } = await supabase
+        .from("todos")
+        .delete()
+        .eq("id", taskId);
+      if (error) {
+        console.error("Error deleting task", error.message);
+        return;
+      }
+      console.log("Tasks deleted", data);
+    };
+    deleteTask();
     const newTasks = tasks.filter((task) => task.id !== taskId);
     setTasks(newTasks);
   }
 
   function onAddTaskSubmit(title, description) {
     const newTask = {
-      id: v4(),
+      // id: v4(),
+      id: tasks.length + 1,
       title,
       description,
-      isCompleted: false,
+      iscomplete: false,
     };
     setTasks([...tasks, newTask]);
   }
