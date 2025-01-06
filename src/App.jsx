@@ -1,21 +1,15 @@
 import { useState } from "react";
 import AddTask from "./components/AddTask";
 import Tasks from "./components/Tasks";
-import { v4 } from "uuid";
+// import { v4 } from "uuid";
 import { useEffect } from "react";
 import Title from "./components/Title";
-
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "./utils/supabase";
 
 function App() {
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    // Update the database
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const updateTasks = async () => {
       const { data, error } = await supabase.from("todos").upsert(tasks);
       if (error) {
@@ -29,10 +23,6 @@ function App() {
 
   // initialize supabase
   useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const fetchTodos = async () => {
       const { data, error } = await supabase.from("todos").select("*");
       if (error) {
@@ -41,13 +31,11 @@ function App() {
       }
       setTasks(data);
     };
-
     fetchTodos();
   }, []);
 
   function onTaskClick(taskId) {
     const newTasks = tasks.map((task) => {
-      //Update
       if (task.id === taskId) {
         return {
           ...task,
@@ -60,11 +48,6 @@ function App() {
   }
 
   function onDeleteTaskClick(taskId) {
-    // Delete the database
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const deleteTask = async () => {
       const { data, error } = await supabase
         .from("todos")
